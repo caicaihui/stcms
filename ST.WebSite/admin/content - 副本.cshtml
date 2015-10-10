@@ -1,0 +1,424 @@
+﻿@using System.Data;
+@using ST.CMS.Database;
+@using ST.Framework;
+
+@{
+    Page.Title = "内容管理";
+
+    var action = Request["action"];
+    var id = Request["id"];
+    var classid = Request["classid"];
+    var formtext = (action == "update") ? "更新" : "添加";
+    var db = DContent.Form(action, id);
+
+    System.Web.Script.Serialization.JavaScriptSerializer js = new System.Web.Script.Serialization.JavaScriptSerializer();
+    Dictionary<string, DModel> m = new Dictionary<string, DModel>();
+
+    var modelid = String.Empty;
+    var modelname = String.Empty;
+    var modelcontent = String.Empty;
+    
+    if (action != null)
+    {
+        modelid = DNav.Details(classid)[0]["modelid"].ToString();
+        var model = DModel.Details(modelid);
+        modelname = model[0]["name"].ToString();
+        modelcontent = model[0]["content"].ToString();
+        m = js.Deserialize<Dictionary<string, DModel>>(modelcontent);
+    }
+    
+    if (action == "update")
+    {
+
+    }
+
+    if (action == "delete")
+    {
+        DContent.Delete(id);
+        Response.Redirect("content?action=list&classid=" + classid);
+    }
+    
+    if (IsPost)
+    {      
+        Dictionary<string, object> d = new Dictionary<string, object>();
+        d.Add("classid", classid);
+        d.Add("modelid", modelid);
+        d.Add("title", Request["st_title"] ?? String.Empty);
+        d.Add("attr", Request["st_attr"] ?? String.Empty);
+        d.Add("attr2", Request["st_attr2"] ?? String.Empty);
+        d.Add("attr3", Request["st_attr3"] ?? String.Empty);
+        d.Add("attr4", Request["st_attr4"] ?? String.Empty);
+        d.Add("attr5", Request["st_attr5"] ?? String.Empty);
+        d.Add("num", Request["st_num"] ?? "0");
+        d.Add("num2", Request["st_num2"] ?? "0");
+        d.Add("image", Request["st_image"] ?? String.Empty);
+        d.Add("image2", Request["st_image2"] ?? String.Empty);
+        d.Add("file", Request["st_file"] ?? String.Empty);
+        d.Add("video", Request["st_video"] ?? String.Empty);
+        d.Add("content", Request.Unvalidated().Form["st_content"] ?? String.Empty);
+        d.Add("content2", Request.Unvalidated().Form["st_content2"] ?? String.Empty);
+        d.Add("note", Request["st_note"] ?? String.Empty);
+        d.Add("note2", Request["st_note2"] ?? String.Empty);
+        d.Add("ishide", Request["st_ishide"] ?? "0");
+        d.Add("ishot", Request["st_ishot"] ?? "0");
+        
+        if (action == "update")
+        {
+            DContent.Update(d, id);
+        }
+        else
+        {
+            DContent.Insert(d);
+        }
+        Response.Redirect("content?action=list&classid=" + classid);
+    }
+}
+@functions{
+    public IHtmlString IsDisplay(bool c)
+    {
+        return new HtmlString(c ? "" : " style=\"display:none\"");
+    }
+}
+<!-- Main content -->
+<section class="content">
+    <!-- Default box -->
+    <div class="row">
+        <div class="col-md-3">
+            <a href="content" class="btn btn-block margin-bottom bg"><i class="fa fa-home"></i> 内容首页</a>
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">内容</h3>
+                    <div class="box-tools">
+                        <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+                    </div>
+                </div>
+                <!-- Add the bg color to the header using any of the bg-* classes -->
+                <div class="box-body no-padding">
+                    <ul class="nav-stacked">
+                        @{
+                            var list1 = DNav.List("0");
+                            foreach (DataRowView it1 in list1)
+                            {
+                                <li><a href="?action=list&classid=@it1["id"]"><i class="fa fa-caret-right"></i> <strong>@it1["name"]</strong> </a><span class="pull-right"><a href="?action=insert&classid=@it1["id"]"><i class="fa fa-plus"></i></a></span></li>
+                                var list2 = DNav.List(@it1["id"].ToString());
+                                foreach (DataRowView it2 in list2)
+                                {
+                                    <li><a href="?action=list&classid=@it2["id"]">　<i class="fa fa-caret-right"></i> @it2["name"] </a><span class="pull-right"><a href="?action=insert&classid=@it2["id"]"><i class="fa fa-plus"></i></a></span></li>
+                                    var list3 = DNav.List(@it2["id"].ToString());
+                                    foreach (DataRowView it3 in list3)
+                                    {
+                                        <li>　　<a href="?action=list&classid=@it3["id"]"><i class="fa fa-caret-right"></i> @it3["name"] </a><span class="pull-right"><a href="?action=insert&classid=@it3["id"]"><i class="fa fa-plus"></i></a></span></li>
+                                    }
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            @if (action == null)
+            {
+                <div class="row">
+                    <div class="col-xs-12">
+                        <!-- small box -->
+                        <div class="small-box bg">
+                            <div class="inner">
+                                <h3><i class="fa fa-cube"></i> 内容首页</h3>
+                                <p>请点击左侧栏目列表进行管理！</p>
+                            </div>
+                        </div>
+                    </div><!-- ./col -->
+                </div><!-- /.row -->
+            }
+            else if(action == "list") 
+            {
+            <div class="box border">
+                <div class="box-header">
+                    <h3 class="box-title">@DNav.Details(classid)[0]["name"] <small>[<span>@modelname</span>模型]</small></h3>
+                    <a href="?action=insert&classid=@classid" class="btn btn-sm pull-right bg">添加</a>
+                </div>
+                <div class="box-body">
+                    <table id="example2" class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>标题</th>
+                                <th width="120">提交时间</th>
+                                <th width="45">管理</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (DataRowView it in DContent.List(classid))
+                            {
+                                <tr>
+                                    <td><a href="?action=update&classid=@classid&id=@it["id"]">@it["title"]</a></td>
+                                    <td>@it["inputdate"]</td>
+                                    <td><a href="?action=update&classid=@classid&id=@it["id"]" class="label label-primary">修改</a>&nbsp;<a href="?action=delete&classid=@classid&id=@it["id"]" onclick="return confirm('确定将此记录删除?')" class="label label-success">删除</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div><!-- /.box-body -->
+            </div><!-- /.box -->
+            }
+            else
+            {
+                <div class="box border">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><span>@formtext</span>数据 <small>[<span>@modelname</span>模型]</small></h3>
+                        <a href="?action=list&classid=@classid" class="btn btn-sm pull-right bg">返回</a>
+                    </div>
+                    <form method="post" action="">
+                        <div class="box-body">
+                            @if (m["title"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["title"].Rename</label>
+                                @Html.TextBox("st_title", db[0]["title"], new { @class = "form-control", @placeholder = "标题" })
+                            </div> 
+                            }
+                            @if (m["attr"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["attr"].Rename</label>
+                                @Html.TextBox("st_attr", db[0]["attr"], new { @class = "form-control", @placeholder = "属性" })
+                            </div>
+                            }
+                            @if (m["attr2"].IsChecked)
+                            { 
+                            <div class="form-group">
+                                <label>@m["attr2"].Rename</label>
+                                @Html.TextBox("st_attr2", db[0]["attr2"], new { @class = "form-control", @placeholder = "属性二" })
+                            </div>
+                            }
+                            @if (m["attr3"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["attr3"].Rename</label>
+                                @Html.TextBox("st_attr3", db[0]["attr3"], new { @class = "form-control", @placeholder = "属性三" })
+                            </div>
+                            }
+                            @if (m["attr4"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["attr4"].Rename</label>
+                                @Html.TextBox("st_attr4", db[0]["attr4"], new { @class = "form-control", @placeholder = "属性四" })
+                            </div>
+                            }
+                            @if (m["attr5"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["attr5"].Rename</label>
+                                @Html.TextBox("st_attr5", db[0]["attr5"], new { @class = "form-control", @placeholder = "属性五" })
+                            </div>
+                            }
+                            @if (m["num"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["num"].Rename</label>
+                                @Html.TextBox("st_num", db[0]["num"], new { @class = "form-control", @placeholder = "数字" })
+                            </div>
+                            }
+                            @if (m["num2"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["num2"].Rename</label>
+                                @Html.TextBox("st_num2", db[0]["num2"], new { @class = "form-control", @placeholder = "数字二" })
+                            </div>
+                            }
+                            @if (m["image"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["image"].Rename</label>
+                                <div class="input-group input-group-sm">   
+                                    @Html.TextBox("st_image", db[0]["image"], new { @class = "form-control", @placeholder = "图片" })
+                                    <span class="input-group-btn">
+                                        <a class="btn bg image_upload">上传图片</a>
+                                    </span>
+                                </div>
+                                @Html.TextArea("st_image_upload")
+                            </div>
+                            }
+                            @if (m["image2"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["image2"].Rename</label>
+                                <div class="input-group input-group-sm">
+                                    @Html.TextBox("st_image2", db[0]["image2"], new { @class = "form-control", @placeholder = "图片二" })
+                                    <span class="input-group-btn">
+                                        <a class="btn bg image2_upload">上传图片</a>
+                                    </span>
+                                </div>
+                            </div>
+                            }
+                            @if (m["file"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["file"].Rename</label>
+                                <div class="input-group input-group-sm">
+                                    @Html.TextBox("st_file", db[0]["file"], new { @class = "form-control", @placeholder = "文件" })
+                                    <span class="input-group-btn">
+                                        <a class="btn bg file_upload">上传文件</a>
+                                    </span>
+                                </div>
+                            </div>
+                            }
+                            @if (m["video"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["video"].Rename</label>
+                                <div class="input-group input-group-sm">
+                                    @Html.TextBox("st_video", db[0]["video"], new { @class = "form-control", @placeholder = "视频" })
+                                    <span class="input-group-btn">
+                                        <a class="btn bg video_upload">上传视频</a>
+                                    </span>
+                                </div>
+                            </div>
+                            }
+                            @if (m["content"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["content"].Rename</label>
+                                @Html.TextArea("st_content", db[0]["content"].ToString(), new { @style = "height:200px" })
+                            </div>
+                            }
+                            @if (m["content2"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["content2"].Rename</label>
+                                @Html.TextArea("st_content2", db[0]["content2"].ToString(), new { @style = "height:200px" })
+                            </div>
+                            }
+                            @if (m["note"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["note"].Rename</label>
+                                @Html.TextArea("st_note", db[0]["note"].ToString(), 3, 0, new { @class = "form-control", @placeholder = "备注" })
+                            </div>
+                            }
+                            @if (m["note2"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["note2"].Rename</label>
+                                @Html.TextArea("st_note2", db[0]["note2"].ToString(), 3, 0, new { @class = "form-control", @placeholder = "备注二" })
+                            </div>
+                            }
+                            @if (m["ishide"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["ishide"].Rename</label><br />
+                                @Html.RadioList("st_ishide", new Dictionary<string, string>() { { "不隐藏", "0" }, { "隐藏", "1" } }, db[0]["ishide"].ToString())
+                            </div>
+                            }
+                            @if (m["ishot"].IsChecked)
+                            {
+                            <div class="form-group">
+                                <label>@m["ishot"].Rename</label><br />
+                                @Html.RadioList("st_ishot", new Dictionary<string, string>() { { "不推荐", "0" }, { "推荐", "1" } }, db[0]["ishot"].ToString())
+                            </div>
+                            }
+                            <div class="form-group">
+                                <label>提交时间</label>
+                                @Html.TextBox("st_inputdate", db[0]["inputdate"], new { @class = "form-control", @placeholder = "提交时间" })
+                            </div>
+                        </div>
+                        <div class="box-footer">
+                            <div class="pull-right">
+                                <button type="reset" class="btn btn-default"><i class="fa fa-circle-o-notch"></i> 重置</button>
+                                <button type="submit" class="btn bg"><i class="fa fa-pencil"></i> @formtext</button>
+                            </div>
+                            @{if (action == "update")
+                            {<a class="btn btn-default" href="?action=delete&classid=@classid&id=@id" onclick="return confirm('确定将此记录删除?')"><i class="fa fa-trash-o"></i> 删除</a>}}
+                        </div><!-- /.box-footer -->
+                    </form>
+                </div><!-- /.box -->
+            }
+        </div>
+    </div>
+</section>
+@section style {
+    <link rel="stylesheet" href="plugins/datatables/dataTables.bootstrap.css">
+    <style type="text/css">
+        .box .nav-stacked {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+            .box .nav-stacked li {
+                padding: 8px 15px;
+            }
+        .table thead td {
+            border:1px solid #ff0000;
+        }
+    </style>
+}
+@section scripts {
+    <script src="plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="plugins/datatables/dataTables.bootstrap.min.js"></script>
+    <script src="plugins/fastclick/fastclick.min.js"></script>
+    <script>
+        $(function () {
+            $('#example2').DataTable({
+                "searching": false,
+                "stateSave1": true,
+                "aaSorting": [[1,'desc']],
+                "aoColumnDefs": [{ "bSortable": false, "aTargets": [2] }],
+                "language": {
+                    "lengthMenu": "每页 _MENU_ 条记录",
+                    "info": "第 _PAGE_ 页 ( 总共 _PAGES_ 页 )",
+                    "infoEmpty": "无记录",
+                    "sEmptyTable": "数据为空",
+                    "oPaginate": {
+                        "sPrevious": "上页",
+                        "sNext": "下页",
+                    }
+                }
+            });
+        });
+    </script>
+    <script src="plugins/ueditor/ueditor.config.js"></script>
+    <script src="plugins/ueditor/ueditor.all.js"></script>
+    <script type="text/javascript">
+        //编辑器
+        if ($("#st_content").length != 0)
+        {
+            UE.getEditor("st_content");
+        }
+        if ($("#st_content2").length != 0)
+        {
+            UE.getEditor("st_content2");
+        }
+        if ($("#st_image_upload").length != 0)
+        {
+            var image = UE.getEditor("st_image_upload", { autoHeightEnabled: false });
+            image.ready(function () {
+                image.hide();
+                image.addListener("beforeInsertImage", function (t, arg) {
+                    $("#st_image").attr("value", arg[0].src);
+                });
+
+                image.addListener("afterUpfile", function (t, arg) {
+                    //$("#file_upload").attr("value", arg[0].src);
+                    alert("x");
+                });
+            });
+
+            $(".image_upload").click(function () {
+                image.getDialog("insertimage").open();
+            });
+
+            $(".image2_upload").click(function () {
+                image.getDialog("insertimage").open();
+            });
+
+            $(".file_upload").click(function () {
+                image.getDialog("attachment").open();
+            });
+
+            $(".video_upload").click(function () {
+                image.getDialog("insertvideo").open();
+            });
+        }
+    </script>
+}

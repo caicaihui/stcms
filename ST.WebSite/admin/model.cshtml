@@ -1,0 +1,292 @@
+﻿@using System.Data;
+@using ST.CMS.Database;
+@using ST.Framework;
+
+@{
+    Page.Title = "模型管理";
+
+    //绑定自定义字段类型
+    List<SelectListItem> select = new List<SelectListItem>();
+    select.Add(new SelectListItem() { Text = "文本框(单行)", Value = "textbox" });
+    select.Add(new SelectListItem() { Text = "文本框(多行)", Value = "textarea" });
+    select.Add(new SelectListItem() { Text = "复选列表", Value = "checkbox" });
+    select.Add(new SelectListItem() { Text = "单选列表", Value = "radio" });
+
+    //基础默认字段
+    var defaultfield = new List<dynamic>();
+    defaultfield.Add(new Dictionary<string, object>() { { "field", "title" }, { "name", "标题" }, { "ischecked", true } });
+    defaultfield.Add(new Dictionary<string, object>() { { "field", "image" }, { "name", "图片" }, { "ischecked", false } });
+    defaultfield.Add(new Dictionary<string, object>() { { "field", "content" }, { "name", "内容" }, { "ischecked", true } });
+    defaultfield.Add(new Dictionary<string, object>() { { "field", "ishot" }, { "name", "隐藏" }, { "ischecked", false } });
+
+    var action = Request["action"];
+    var id = Request["id"];
+    var db = DModel.Form(action, id);
+
+    System.Web.Script.Serialization.JavaScriptSerializer js = new System.Web.Script.Serialization.JavaScriptSerializer();
+
+    if (action == "update")
+    {
+        defaultfield = js.Deserialize<List<dynamic>>(db[0]["content"].ToString());
+    }
+
+    if (action == "delete")
+    {
+        DModel.Delete(id);
+        Response.Redirect("model");
+    }
+
+    if (IsPost)
+    {
+        //提交基础字段
+        var inputdefaultfield = new List<dynamic>();
+        foreach (var it in defaultfield)
+        {
+            inputdefaultfield.Add(new Dictionary<string, object>() { { "field", it["field"] }, { "name", Request["st_model_textbox_" + it["field"]] }, { "ischecked", Request["st_model_checkbox_" + it["field"]] == "on" } });
+        }
+
+        Dictionary<string, object> d = new Dictionary<string, object>();
+        d.Add("name", Request["st_name"]);
+        d.Add("content", js.Serialize(inputdefaultfield));
+        d.Add("json", Request["st_json"]);
+
+        if (action == "update")
+        {
+            DModel.Update(d, id);
+        }
+        else
+        {
+            DModel.Insert(d);
+        }
+        Response.Redirect("model");
+    }
+}
+
+@functions{
+    public IHtmlString IsChecked(bool c)
+    {
+        return new HtmlString(c ? " checked=\"checked\"" : "");
+    }
+}
+<!-- Main content -->
+<section class="content">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="btn-group btn-group-justified margin-bottom">
+                <a href="model" class="btn btn-app bg"><i class="fa fa-home"></i> 模型首页</a>
+                <a href="?action=insert" class="btn btn-app bg"><i class="fa fa-plus"></i> 新建模型</a>
+            </div>
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">模型</h3>
+                    <div class="box-tools">
+                        <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+                    </div>
+                </div>
+                <div class="box-body no-padding">
+                    <ul class="nav nav-pills nav-stacked">
+                        @foreach (DataRowView it in DModel.List())
+                        {
+                            <li><a href="?action=update&id=@it["id"]"><i class="fa fa-inbox"></i> @it["name"]</a></li>
+                        }
+                    </ul>
+                </div><!-- /.box-body -->
+            </div><!-- /. box -->
+        </div><!-- /.col -->
+        <div class="col-md-9">
+            @if (action == null)
+            {
+                <div class="row">
+                    <div class="col-xs-12">
+                        <!-- small box -->
+                        <div class="small-box bg">
+                            <div class="inner">
+                                <h3><i class="fa fa-th-large"></i> 模型首页</h3>
+                            </div>
+                            <a href="?action=insert" class="small-box-footer">新建模型 <i class="fa fa-plus"></i></a>
+                        </div>
+                    </div><!-- ./col -->
+                </div><!-- /.row -->
+            }
+            else
+            {
+                <div class="box border">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><span>@((action == "update") ? "更新" : "添加")</span>模型</h3>
+                    </div>
+                    <form class="form-horizontal" method="post" action="">
+                        <div class="box-body">
+                            <div class="form-group">
+                                <div class="col-sm-6">
+                                    <input type="text" name="st_name" class="form-control" value="@db[0]["name"]" placeholder="模型名称">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box-header with-border">
+                            <h3 class="box-title">基础字段管理</h3>
+                        </div>
+                        <div class="box-body">
+                            <div class="form-group">
+                                @foreach (var it in defaultfield)
+                                {
+                                    <div class="col-sm-6">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <input type="checkbox" name="st_model_checkbox_@it["field"]" @IsChecked(it["ischecked"])>
+                                            </span>
+                                            <input type="text" name="st_model_textbox_@it["field"]" class="form-control" value="@it["name"]">
+                                            <span class="input-group-addon">@it["field"]</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="form-group hide">
+                                <div class="col-sm-12">
+                                    <input type="text" name="st_json" class="form-control js-json" value="@db[0]["json"]">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box-header with-border">
+                            <h3 class="box-title">自定义字段管理</h3>
+                            <span class="pull-right"><a href="#" class="js-add"><i class="fa fa-plus"></i></a></span>
+                        </div>
+                        <div class="box-body js-hide-box hide">
+                            <div class="form-group">
+                                <div class="col-sm-2">
+                                    <input type="text" name="st_model_diy_name" class="form-control js-name" placeholder="显示名称">
+                                </div>
+                                <div class="col-sm-2">
+                                    <input type="text" name="st_model_diy_field" class="form-control js-field" placeholder="字段名称">
+                                </div>
+                                <div class="col-sm-4">
+                                    <input type="text" name="st_model_diy_default" class="form-control js-default" placeholder="默认数据">
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="input-group">
+                                        @Html.DropDownList("st_model_diy_type", null, select, 0, new { @class = "form-control js-type" })
+                                        <span class="input-group-addon">
+                                            <a href="#" class="js-up"><i class="fa fa-arrow-up"></i></a>
+                                            <a href="#" class="js-down"><i class="fa fa-arrow-down"></i></a>
+                                            <a href="#" class="js-delete"><i class="fa fa-minus"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box-body js-box">
+                            
+                        </div><!-- /.box-body -->
+                        <div class="box-footer">
+                            <div class="pull-right">
+                                <button type="reset" class="btn btn-default"><i class="fa fa-circle-o-notch"></i> 重置</button>
+                                <button type="submit" class="btn bg"><i class="fa fa-pencil"></i> @((action == "update") ? "更新" : "添加")</button>
+                            </div>
+                            @{if (action == "update")
+                            {<a class="btn btn-default" href="?action=delete&id=@id" onclick="return confirm('确定将此记录删除?')"><i class="fa fa-trash-o"></i> 删除</a>}}
+                        </div><!-- /.box-footer -->
+                    </form>
+                </div><!-- /.box -->
+            }
+        </div><!-- /.col -->
+    </div><!-- /.row -->
+</section>
+@section style {
+    <style type="text/css">
+        .form-group .input-group-addon:last-child {
+            width: 60px;
+            padding: 0;
+            background: #f1f1f1;
+            font-size: 8px;
+        }
+        .form-group .col-sm-6{
+            margin-bottom: 15px;
+        }
+
+    </style>
+}
+@section scripts {
+    <script>
+        add();
+
+        $(".js-add").click(function () {
+            add();
+            return false;
+        });
+
+        $(document).on("click", ".js-up", function () {
+            $(this).parent().parent().parent().parent().insertBefore($(this).parent().parent().parent().parent().prev());
+            make();
+            move();
+            return false;
+        });
+
+        $(document).on("click", ".js-down", function () {
+            $(this).parent().parent().parent().parent().insertAfter($(this).parent().parent().parent().parent().next());
+            make();
+            move();
+            return false;
+        });
+
+        $(document).on("click", ".js-delete", function () {
+            if (confirm('确定将此记录删除?')) {
+                $(this).parent().parent().parent().parent().remove();
+                make();
+                move();
+                return false;
+            }
+        });
+
+        $(document).on("blur", ".js-box .form-control", function () {
+            make();
+        });
+
+        $(document).on("change", "#st_model_diy_type", function () {
+            make();
+        });
+
+        function add() {
+            $(".js-box").append($(".js-hide-box .form-group").eq(0).clone());
+            move();
+        }
+
+        function move() {
+            $(".js-box .js-up").show();
+            $(".js-box .js-down").show();
+            $(".js-box .form-group:first").find(".js-up").hide();
+            $(".js-box .form-group:last").find(".js-down").hide();
+        }
+
+        function make() {
+            var text = "";
+            $(".js-box .form-group").each(function () {
+                var field = $(this).find(".js-field").val();
+                var name = $(this).find(".js-name").val();
+                var defa = $(this).find(".js-default").val();
+                var type = $(this).find(".js-type").val();
+                if (field != "" && name != "") {
+                    text += '{"field":"' + field + '","name":"' + name + '","default":"' + defa + '","bind":"","type":"'+ type +'"},';
+                }
+            });
+
+            var val = "[" + text.substring(0, text.length - 1) + "]";
+            if (val.length != 2) {
+                $(".js-json").val(val);
+            }            
+        }
+    </script>
+    @if (action == "update")
+    { 
+    <script>
+        var json = eval($(".js-json").val());
+        for (i = 0; i < json.length; i++)
+        {
+            add();
+            var t = $(".js-box .form-group").eq(i);
+            t.find(".js-field").val(json[i].field);
+            t.find(".js-name").val(json[i].name);
+            t.find(".js-default").val(json[i].default);
+            t.find(".js-type").val(json[i].type);
+        }
+    </script>
+    }
+}

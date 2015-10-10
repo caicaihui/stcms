@@ -1,0 +1,181 @@
+﻿@using System.Data;
+@using ST.CMS.Database;
+@using ST.Framework;
+
+@{
+    Page.Title = "栏目管理";
+
+    //绑定模型列表框11111111111
+    List<SelectListItem> list = new List<SelectListItem>();
+    foreach(DataRowView dr in DModel.List())
+    {
+        list.Add(new SelectListItem() { Text = dr["name"].ToString(), Value = dr["id"].ToString() });
+    }
+
+    var action = Request["action"];
+    var id = Request["id"];
+    var db = DNav.Form(action, id);
+    
+    if (action == "delete")
+    {
+        DNav.Delete(id);
+        Response.Redirect("nav");
+    }
+  
+    if (IsPost)
+    {
+        Dictionary<string, object> d = new Dictionary<string, object>();
+        d.Add("parentid", Request["st_parentid"]);
+        d.Add("name", Request["st_name"]);
+        d.Add("modelid", Request["st_modelid"]);
+        d.Add("ishide", Request["st_ishide"]);
+        d.Add("istarget", Request["st_istarget"]);
+        d.Add("link", Request["st_link"]);
+        d.Add("ordernum", Request["st_ordernum"]);
+
+        if (action == "update")
+        {
+            DNav.Update(d, id);
+        }
+        else
+        { 
+            DNav.Insert(d);
+        }
+        Response.Redirect("nav");
+    }
+}
+<!-- Main content -->
+<section class="content">
+    <!-- Default box -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="btn-group btn-group-justified margin-bottom">
+                <a href="nav" class="btn btn-app bg"><i class="fa fa-home"></i> 栏目首页</a>
+                <a href="?action=insert" class="btn btn-app bg"><i class="fa fa-plus"></i> 新建栏目</a>
+            </div>
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">栏目</h3>
+                    <div class="box-tools">
+                        <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+                    </div>
+                </div>
+                <!-- Add the bg color to the header using any of the bg-* classes -->
+                <div class="box-body no-padding">
+                    <ul class="nav-stacked">
+                        @{
+                            var list1 = DNav.List("0");
+                            foreach (DataRowView it1 in list1)
+                            {
+                                <li><a href="?action=update&id=@it1["id"]"><i class="fa fa-caret-right"></i> <strong>@it1["name"]</strong> </a><span class="pull-right"><a href="?action=insert&id=@it1["id"]"><i class="fa fa-plus color"></i></a></span></li>
+                                var list2 = DNav.List(@it1["id"].ToString());
+                                foreach (DataRowView it2 in list2)
+                                {
+                                    <li><a href="?action=update&id=@it2["id"]">　<i class="fa fa-caret-right"></i> @it2["name"] </a><span class="pull-right"><a href="?action=insert&id=@it2["id"]"><i class="fa fa-plus"></i></a></span></li>
+                                    var list3 = DNav.List(@it2["id"].ToString());
+                                    foreach (DataRowView it3 in list3)
+                                    {
+                                        <li>　　<a href="?action=update&id=@it3["id"]"><i class="fa fa-caret-right"></i> @it3["name"] </a></li>
+                                    }
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            @if (action == null)
+            {
+            <div class="row">
+                <div class="col-xs-12">
+                    <!-- small box -->
+                    <div class="small-box bg">
+                        <div class="inner">
+                            <h3><i class="fa fa-th-list"></i> 栏目首页</h3>
+                        </div>
+                        <a href="?action=insert" class="small-box-footer">新建栏目 <i class="fa fa-plus"></i></a>
+                    </div>
+                </div><!-- ./col -->
+            </div><!-- /.row -->
+            }
+            else
+            {
+            <div class="box border">
+                <div class="box-header with-border">
+                    <h3 class="box-title"><span>@((action == "update") ? "更新" : "添加")</span>栏目</h3>
+                </div>
+                <form class="form-horizontal" method="post" action="">
+                    <div class="box-body">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">上级栏目</label>
+                            <div class="col-sm-3">
+                                @{var parent = DNav.Parent(action, id, "无上级栏目");}
+                                <select class="form-control" name="st_parentid">
+                                    <option value="@parent[0]">@parent[1]</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">栏目名称</label>
+                            <div class="col-sm-3">
+                                <input type="text" name="st_name" class="form-control" value="@db[0]["name"]" placeholder="栏目名称">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">栏目模型</label>
+                            <div class="col-sm-3">
+                                @Html.DropDownList("st_modelid", null, list, db[0]["modelid"], new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">栏目隐藏</label>
+                            <div class="col-sm-10">
+                                @Html.RadioList("st_ishide", new Dictionary<string, string>() { { "不隐藏", "0" }, { "隐藏", "1" } }, db[0]["ishide"].ToString())
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">栏目打开方式</label>
+                            <div class="col-sm-10">
+                                @Html.RadioList("st_istarget", new Dictionary<string, string>() { { "原窗口", "0" }, { "新窗口", "1" } }, db[0]["istarget"].ToString())
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">栏目外链</label>
+                            <div class="col-sm-10">
+                                <input type="text" name="st_link" class="form-control" value="@db[0]["link"]" placeholder="栏目外链">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">排序数字</label>
+                            <div class="col-sm-2">
+                                <input type="text" name="st_ordernum" class="form-control" value="@db[0]["ordernum"]" placeholder="排序数字">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="box-footer">
+                        <div class="pull-right">
+                            <button type="reset" class="btn btn-default"><i class="fa fa-circle-o-notch"></i> 重置</button>
+                            <button type="submit" class="btn bg"><i class="fa fa-pencil"></i> @((action == "update") ? "更新" : "添加")</button>
+                        </div>
+                        @{if (action == "update")
+                        {<a class="btn btn-default" href="?action=delete&id=@id" onclick="return confirm('确定将此记录删除?')"><i class="fa fa-trash-o"></i> 删除</a>}}
+                    </div><!-- /.box-footer -->
+                </form>
+            </div><!-- /.box -->
+            }
+        </div>
+    </div>
+</section>
+@section style {
+    <style type="text/css">
+        .box .nav-stacked {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+            .box .nav-stacked li {
+                padding: 8px 15px;
+            }
+    </style>
+}

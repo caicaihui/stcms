@@ -1,0 +1,21 @@
+﻿@{
+    Layout = "_layout.cshtml";
+
+    var filename = Path.GetFileName(Request.PhysicalPath);
+
+    if (filename != "index")
+    {
+        if(ST.Framework.Utils.USession.Exists("admin"))
+        {
+            Response.Redirect("index");
+        }
+        else
+        {
+            System.Data.DataView dv = (System.Data.DataView)ST.Framework.Utils.USession.Get("admin");
+            Page.UserID = dv[0]["id"].ToString();
+            Page.UserName = dv[0]["username"].ToString();
+            Page.InputDate = dv[0]["inputdate"].ToString();
+            Page.UserStyle = dv[0]["userstyle"].ToString();
+        }
+    }
+}

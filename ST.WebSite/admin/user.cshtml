@@ -1,0 +1,110 @@
+﻿@using System.Data;
+@using ST.CMS.Database;
+@using ST.Framework;
+
+@{
+    Page.Title = "用户管理";
+
+    var action = Request["action"];
+    var id = Request["id"];
+    var db = DUser.Form(action, id);
+    
+    if (action == "delete")
+    {
+        DUser.Delete(id);
+        Response.Redirect("user");
+    }
+    
+    if (IsPost)
+    {
+        Dictionary<string, object> d = new Dictionary<string, object>();
+        d.Add("username", Request["st_username"]);
+        d.Add("password", Request["st_password"]);
+        d.Add("userstyle", "fixed skin-blue-light");
+
+        if (action == "update")
+        {
+            DUser.Update(d, id);
+        }
+        else
+        {
+            DUser.Insert(d);
+        }
+        Response.Redirect("user");
+    }
+}
+<!-- Main content -->
+<section class="content">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="btn-group btn-group-justified margin-bottom">
+                <a href="user" class="btn btn-app bg"><i class="fa fa-home"></i> 会员首页</a>
+                <a href="?action=insert" class="btn btn-app bg"><i class="fa fa-plus"></i> 新建会员</a>
+            </div>
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">用户</h3>
+                    <div class="box-tools">
+                        <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+                    </div>
+                </div>
+                <div class="box-body no-padding">
+                    <ul class="nav nav-pills nav-stacked">
+                        @foreach (DataRowView it in DUser.List())
+                        {
+                            <li><a href="?action=update&id=@it["id"]"><i class="fa fa-user"></i> @it["username"]</a></li>
+                        }
+                    </ul>
+                </div><!-- /.box-body -->
+            </div><!-- /. box -->
+        </div><!-- /.col -->
+        <div class="col-md-9">
+            @if (action == null)
+            {
+                <div class="row">
+                    <div class="col-xs-12">
+                        <!-- small box -->
+                        <div class="small-box bg">
+                            <div class="inner">
+                                <h3><i class="fa fa-user"></i> 用户首页</h3>
+                            </div>
+                            <a href="?action=insert" class="small-box-footer">新建用户 <i class="fa fa-plus"></i></a>
+                        </div>
+                    </div><!-- ./col -->
+                </div><!-- /.row -->
+            }
+            else
+            {
+                <div class="box border">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><span>@((action == "update") ? "更新" : "添加")</span>用户</h3>
+                    </div>
+                    <form class="form-horizontal" method="post" action="">
+                        <div class="box-body">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">用户名称</label>
+                                <div class="col-sm-4">
+                                    <input type="text" name="st_username" class="form-control" value="@db[0]["username"]" placeholder="用户名称">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">用户密码</label>
+                                <div class="col-sm-4">
+                                    <input type="text" name="st_password" class="form-control" value="@db[0]["password"]" placeholder="用户密码">
+                                </div>
+                            </div>
+                        </div><!-- /.box-body -->
+                        <div class="box-footer">
+                            <div class="pull-right">
+                                <button type="reset" class="btn btn-default"><i class="fa fa-circle-o-notch"></i> 重置</button>
+                                <button type="submit" class="btn bg"><i class="fa fa-pencil"></i> @((action == "update") ? "更新" : "添加")</button>
+                            </div>
+                            @{if (action == "update")
+                            {<a class="btn btn-default" href="?action=delete&id=@id" onclick="return confirm('确定将此记录删除?')"><i class="fa fa-trash-o"></i> 删除</a>}}
+                        </div><!-- /.box-footer -->
+                    </form>
+                </div><!-- /.box -->
+            }
+        </div><!-- /.col -->
+    </div><!-- /.row -->
+</section>

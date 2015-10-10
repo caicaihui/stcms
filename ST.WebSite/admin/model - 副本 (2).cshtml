@@ -1,0 +1,220 @@
+﻿@using System.Data;
+@using ST.CMS.Database;
+@using ST.Framework;
+
+@{
+    Page.Title = "模型管理";
+
+    List<SelectListItem> select = new List<SelectListItem>();
+    select.Add(new SelectListItem() { Text = "文本框(单行)", Value = "textbox" });
+    select.Add(new SelectListItem() { Text = "文本框(多行)", Value = "textarea" });
+    select.Add(new SelectListItem() { Text = "复选列表(checkbox)", Value = "checkbox" });
+    select.Add(new SelectListItem() { Text = "单选列表(radio)", Value = "radio" });
+
+    var m = new List<dynamic>();
+    IDictionary<string, object> d1 = new System.Dynamic.ExpandoObject() { };
+    d1.Add("field", "title");
+    d1.Add("name", "标题");
+    d1.Add("ischecked", true);
+
+    IDictionary<string, object> d2 = new System.Dynamic.ExpandoObject();
+    d2.Add("field", "images");
+    d2.Add("name", "图片");
+    d2.Add("ischecked", false);
+
+    IDictionary<string, object> d3 = new System.Dynamic.ExpandoObject();
+    d3.Add("field", "content");
+    d3.Add("name", "内容");
+    d3.Add("ischecked", true);
+
+    IDictionary<string, object> d4 = new System.Dynamic.ExpandoObject();
+    d4.Add("field", "ishide");
+    d4.Add("name", "隐藏");
+    d4.Add("ischecked", false);
+    
+    IDictionary<string, object> d5 = new System.Dynamic.ExpandoObject();
+    d5.Add("field", "ishot");
+    d5.Add("name", "热点");
+    d5.Add("ischecked", false);
+
+    m.Add(d1);
+    m.Add(d2);
+    m.Add(d3);
+    m.Add(d4);
+    m.Add(d5);
+
+    var action = Request["action"];
+    var id = Request["id"];
+    var db = DModel.Form(action, id);
+
+    System.Web.Script.Serialization.JavaScriptSerializer js = new System.Web.Script.Serialization.JavaScriptSerializer();
+
+    if (action == "update")
+    {
+        try
+        {
+            //m = js.Deserialize<List<dynamic>>(db[0]["content"].ToString());
+            m = Codeplex.Data.DynamicJson.Parse(db[0]["content"].ToString());
+        }
+        catch
+        { 
+        }
+    }
+
+    if (action == "delete")
+    {
+        DModel.Delete(id);
+        Response.Redirect("model");
+    }
+        
+    if (IsPost)
+    {
+
+        var listupdate = new List<dynamic>();
+
+        foreach (var it in m)
+        {
+            listupdate.Add(new Dictionary<string, object>() { { "field", it.field }, { "name", Request["st_model_textbox_" + it.field] }, { "ischecked", Request["st_model_checkbox_" + it.field] == "on" } });
+        }
+
+        Dictionary<string, object> d = new Dictionary<string, object>();
+        d.Add("name", Request["st_name"]);
+        d.Add("content", js.Serialize(listupdate));
+
+        if (action == "update")
+        {
+            DModel.Update(d, id);
+        }
+        else
+        {
+            DModel.Insert(d);
+        }
+        Response.Redirect("model");
+    }
+}
+
+@functions{
+    public IHtmlString IsChecked(bool c)
+    {
+        return new HtmlString(c ? " checked=\"checked\"" : "");
+    }
+}
+<!-- Main content -->
+<section class="content">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="btn-group btn-group-justified margin-bottom">
+                <a href="model" class="btn btn-app bg"><i class="fa fa-home"></i> 模型首页</a>
+                <a href="?action=insert" class="btn btn-app bg"><i class="fa fa-plus"></i> 新建模型</a>
+            </div>
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">模型</h3>
+                    <div class="box-tools">
+                        <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+                    </div>
+                </div>
+                <div class="box-body no-padding">
+                    <ul class="nav nav-pills nav-stacked">
+                        @foreach (DataRowView it in DModel.List())
+                        {
+                        <li><a href="?action=update&id=@it["id"]"><i class="fa fa-inbox"></i> @it["name"]</a></li>
+                        }
+                    </ul>
+                </div><!-- /.box-body -->
+            </div><!-- /. box -->
+        </div><!-- /.col -->
+        <div class="col-md-9">
+            @if (action == null)
+            {
+                <div class="row">
+                    <div class="col-xs-12">
+                        <!-- small box -->
+                        <div class="small-box bg">
+                            <div class="inner">
+                                <h3><i class="fa fa-th-large"></i> 模型首页</h3>
+                            </div>
+                            <a href="?action=insert" class="small-box-footer">新建模型 <i class="fa fa-plus"></i></a>
+                        </div>
+                    </div><!-- ./col -->
+                </div><!-- /.row -->
+            }
+            else
+            {
+            <div class="box border">
+                <div class="box-header with-border">
+                    <h3 class="box-title"><span>@((action == "update") ? "更新" : "添加")</span>模型</h3>
+                </div>
+                <form class="form-horizontal" method="post" action="">
+                    <div class="box-body">
+                        <div class="form-group">
+                            <div class="col-sm-6">
+                                <input type="text" name="st_name" class="form-control" value="@db[0]["name"]" placeholder="模型名称">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="box-header with-border">
+                        <h3 class="box-title">基础字段</h3>
+                    </div>
+                    <div class="box-body">
+                        <div class="form-group">
+                            @foreach (var it in m)
+                            {
+                                <div class="col-sm-6">
+                                    <div class="input-group">
+                                        <span class="input-group-addon">
+                                            <input type="checkbox" name="st_model_checkbox_@it.field" @IsChecked(it.ischecked)>
+                                        </span>
+                                        <input type="text" name="st_model_textbox_@it.field" class="form-control" value="@it.name">
+                                        <span class="input-group-addon">@it.field</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div><!-- /.box-body -->
+                    <div class="box-header with-border">
+                        <h3 class="box-title">自定义字段</h3>
+                        <span class="pull-right"><a href="?action=insert&classid=1"><i class="fa fa-plus"></i></a></span>
+                    </div>
+                    <div class="box-body">
+                        <div class="form-group">
+                            <div class="col-sm-2">
+                                <input type="text" name="" class="form-control" value="" placeholder="字段名称">
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.DropDownList("st_modelid", null, select, 0, new { @class = "form-control" })
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="text" name="" class="form-control" value="" placeholder="显示名称">
+                            </div>
+                            <div class="col-sm-4">
+                                <input type="text" name="" class="form-control" value="" placeholder="默认值">
+                            </div>
+                        </div>
+                    </div><!-- /.box-body -->
+                    <div class="box-footer">
+                        <div class="pull-right">
+                            <button type="reset" class="btn btn-default"><i class="fa fa-circle-o-notch"></i> 重置</button>
+                            <button type="submit" class="btn bg"><i class="fa fa-pencil"></i> @((action == "update") ? "更新" : "添加")</button>
+                        </div>
+                        @{if (action == "update"){<a class="btn btn-default" href="?action=delete&id=@id" onclick="return confirm('确定将此记录删除?')"><i class="fa fa-trash-o"></i> 删除</a>}}
+                    </div><!-- /.box-footer -->
+                </form>
+            </div><!-- /.box -->
+            }
+        </div><!-- /.col -->
+    </div><!-- /.row -->
+</section>
+@section style {
+    <style type="text/css">
+        .form-group .input-group-addon:last-child {
+            width:60px; 
+            padding:0;
+            background:#f1f1f1;
+            font-size:8px;
+        }
+        .form-group .col-sm-6 {
+            margin-bottom: 15px;
+        }
+    </style>
+}

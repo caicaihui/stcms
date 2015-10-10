@@ -1,0 +1,82 @@
+﻿@{
+    Page.Title = "后台风格";
+
+    var userstyle = Page.UserStyle.Split(' ');
+    var pagelayout = Request["layout"] ?? userstyle[0];
+    var pagecolor = Request["color"] ?? userstyle[1];
+
+    if(Request["layout"] != null || Request["color"] != null)
+    {
+        ST.CMS.Database.DUser.UpdateStyle(pagelayout, pagecolor, Page.UserName);
+        ST.Framework.Utils.USession.Remove("admin");
+        ST.Framework.Utils.USession.Set("admin", ST.CMS.Database.DUser.Details(Page.UserName));
+        Response.Redirect("userstyle");
+    }
+}
+<!-- Main content -->
+<section class="content">
+    <!-- Default box -->
+    <div class="box border">
+        <div class="box-header with-border">
+            <h3 class="box-title">布局方式</h3>
+        </div>
+        <div class="box-body">
+            <div class="btn-group">
+                <a href="?layout=fixed" class="btn btn-default">满屏布局</a>
+                <a href="?layout=layout-boxed" class="btn btn-default">窄屏布局</a>
+            </div>
+        </div>
+    </div>
+    <div class="box border">
+        <div class="box-header with-border">
+            <h3 class="box-title">颜色配置</h3>
+        </div>
+        <link rel="stylesheet" href="plugins/iCheck/square/blue.css">
+        <div class="box-body">
+            <div class="row">
+                <div class="col-sm-4">
+                    <a href="?color=skin-blue-light" style="background:#3C8DBC; color:#fff;">蓝色风格</a>
+                </div><!-- /.col -->
+                <div class="col-sm-4">
+                    <a href="?color=skin-black-light" style="background:#fff;">白色风格</a>
+                </div><!-- /.col -->
+                <div class="col-sm-4">
+                    <a href="?color=skin-red-light" style="background:#DD4B39; color:#fff;">红色风格</a>
+                </div><!-- /.col -->
+                <div class="col-sm-4">
+                    <a href="?color=skin-yellow-light" style="background:#F39C12; color:#fff;">黄色风格</a>
+                </div><!-- /.col -->
+                <div class="col-sm-4">
+                    <a href="?color=skin-purple-light" style="background:#605CA8; color:#fff;">紫色风格</a>
+                </div><!-- /.col -->
+                <div class="col-sm-4">
+                    <a href="?color=skin-green-light" style="background:#00A65A; color:#fff;">绿色风格</a>
+                </div><!-- /.col -->
+            </div>
+        </div>
+    </div>
+</section>
+@section style {
+    <style type="text/css">
+        .col-sm-4 a {
+            display: block;
+            text-align: center;
+            line-height: 50px;
+            margin-bottom: 10px;
+            border: 10px solid #f5f5f5;
+        }
+
+            .col-sm-4 a:hover, .col-sm-4 .hover {
+                border-color: #ddd;
+                font-weight: 700;
+            }
+    </style>
+}
+@section scripts {
+    <script>
+    var pagelayout = "@pagelayout";
+    var pagecolor = "@pagecolor";
+    $("a[href='?layout="+pagelayout+"']").removeClass("btn-default").addClass("bg");
+    $("a[href='?color="+pagecolor+"']").addClass("hover");
+    </script>
+}

@@ -1,0 +1,205 @@
+﻿@using System.Data;
+@using ST.CMS.Database;
+@using ST.Framework;
+
+@{
+    Page.Title = "模型管理";
+    
+    //List<Model> list = new List<Model>();
+    //list.Add(new Model("classid", "所属栏目", false, ""));
+    //list.Add(new Model("title","标题", true, ""));
+    //list.Add(new Model("attr", "属性", false, ""));
+    //list.Add(new Model("attr2", "属性二", false, ""));
+    //list.Add(new Model("attr3", "属性三", false, ""));
+    //list.Add(new Model("attr4", "属性四", false, ""));
+    //list.Add(new Model("attr5", "属性五", false, ""));
+    //list.Add(new Model("num", "数字", false, ""));
+    //list.Add(new Model("num2", "数字二", false, ""));
+    //list.Add(new Model("image", "图片", false, ""));
+    //list.Add(new Model("image2", "图片二", false, ""));
+    //list.Add(new Model("file", "附件", false, ""));
+    //list.Add(new Model("video", "视频", false, ""));
+    //list.Add(new Model("content", "内容", true, ""));
+    //list.Add(new Model("content2", "内容二", false, ""));
+    //list.Add(new Model("note", "备注", false, ""));
+    //list.Add(new Model("note2", "备注二", false, ""));
+    //list.Add(new Model("ishide", "隐藏", false, ""));
+    //list.Add(new Model("ishot", "热点", false, ""));
+
+    Dictionary<string, DModel> m = new Dictionary<string, ST.CMS.Database.DModel>();
+    m.Add("title", new DModel("标题", true, ""));
+    m.Add("attr", new DModel("属性", false, ""));
+    m.Add("attr2", new DModel("属性二", false, ""));
+    m.Add("attr3", new DModel("属性三", false, ""));
+    m.Add("attr4", new DModel("属性四", false, ""));
+    m.Add("attr5", new DModel("属性五", false, ""));
+    m.Add("num", new DModel("数字", false, ""));
+    m.Add("num2", new DModel("数字二", false, ""));
+    m.Add("image", new DModel("图片", false, ""));
+    m.Add("image2", new DModel("图片二", false, ""));
+    m.Add("file", new DModel("附件", false, ""));
+    m.Add("video", new DModel("视频", false, ""));
+    m.Add("content", new DModel("内容", true, ""));
+    m.Add("content2", new DModel("内容二", false, ""));
+    m.Add("note", new DModel("备注", false, ""));
+    m.Add("note2", new DModel("备注二", false, ""));
+    m.Add("ishide", new DModel("隐藏", false, ""));
+    m.Add("ishot", new DModel("热点", false, ""));
+
+    var action = Request["action"];
+    var id = Request["id"];
+    var formtext = (action == "update") ? "更新" : "添加";
+    var db = DModel.Form(action, id);
+
+    System.Web.Script.Serialization.JavaScriptSerializer js = new System.Web.Script.Serialization.JavaScriptSerializer();
+
+    if (action == "update")
+    {
+        try
+        {
+            m = js.Deserialize<Dictionary<string, DModel>>(db[0]["content"].ToString());
+        }
+        catch
+        { 
+        }
+    }
+
+    if (action == "delete")
+    {
+        DModel.Delete(id);
+        Response.Redirect("model");
+    }
+        
+    if (IsPost)
+    {
+        Dictionary<string, DModel> listupdate = new Dictionary<string, DModel>();
+
+        foreach (var it in m)
+        {
+            listupdate.Add(it.Key, new DModel(it.Value.Name, Request["st_model_checkbox_" + it.Key] == "on", Request["st_model_textbox_" + it.Key]));
+        }
+        
+        Dictionary<string, object> d = new Dictionary<string, object>();
+        d.Add("name", Request["st_name"]);
+        d.Add("content", js.Serialize(listupdate));
+
+        if (action == "update")
+        {
+            DModel.Update(d, id);
+        }
+        else
+        {
+            DModel.Insert(d);
+        }
+        Response.Redirect("model");
+    }
+}
+
+@functions{
+    public IHtmlString IsChecked(bool c)
+    {
+        return new HtmlString(c ? " checked=\"checked\"" : "");
+    }
+}
+<!-- Main content -->
+<section class="content">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="btn-group btn-group-justified margin-bottom">
+                <a href="model" class="btn btn-app bg"><i class="fa fa-home"></i> 模型首页</a>
+                <a href="?action=insert" class="btn btn-app bg"><i class="fa fa-plus"></i> 新建模型</a>
+            </div>
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">模型</h3>
+                    <div class="box-tools">
+                        <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+                    </div>
+                </div>
+                <div class="box-body no-padding">
+                    <ul class="nav nav-pills nav-stacked">
+                        @foreach (DataRowView it in DModel.List())
+                        {
+                        <li><a href="?action=update&id=@it["id"]"><i class="fa fa-inbox"></i> @it["name"]</a></li>
+                        }
+                    </ul>
+                </div><!-- /.box-body -->
+            </div><!-- /. box -->
+        </div><!-- /.col -->
+        <div class="col-md-9">
+            @if (action == null)
+            {
+                <div class="row">
+                    <div class="col-xs-12">
+                        <!-- small box -->
+                        <div class="small-box bg">
+                            <div class="inner">
+                                <h3><i class="fa fa-th-large"></i> 模型首页</h3>
+                            </div>
+                            <a href="?action=insert" class="small-box-footer">新建模型 <i class="fa fa-plus"></i></a>
+                        </div>
+                    </div><!-- ./col -->
+                </div><!-- /.row -->
+            }
+            else
+            {
+            <div class="box border">
+                <div class="box-header with-border">
+                    <h3 class="box-title"><span>@formtext</span>模型</h3>
+                </div>
+                <form class="form-horizontal" method="post" action="">
+                    <div class="box-body">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">模型名称</label>
+                            <div class="col-sm-4">
+                                <input type="text" name="st_name" class="form-control" value="@db[0]["name"]">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="box-header with-border">
+                        <h3 class="box-title">字段管理</h3>
+                    </div>
+                    <div class="box-body">
+                        <div class="form-group">
+                        @foreach (var it in m)
+                        {
+                            <label class="col-sm-2 control-label">@it.Value.Name</label>
+                            <div class="col-sm-4">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <input type="checkbox" name="st_model_checkbox_@it.Key"@IsChecked(it.Value.IsChecked)>
+                                    </span>
+                                    <input type="text" name="st_model_textbox_@it.Key" class="form-control" value="@it.Value.Rename">
+                                    <span class="input-group-addon">@it.Key</span>
+                                </div>
+                            </div>
+
+                        }
+                        </div>
+                    </div><!-- /.box-body -->
+                    <div class="box-footer">
+                        <div class="pull-right">
+                            <button type="reset" class="btn btn-default"><i class="fa fa-circle-o-notch"></i> 重置</button>
+                            <button type="submit" class="btn bg"><i class="fa fa-pencil"></i> @formtext</button>
+                        </div>
+                        @{if (action == "update"){<a class="btn btn-default" href="?action=delete&id=@id" onclick="return confirm('确定将此记录删除?')"><i class="fa fa-trash-o"></i> 删除</a>}}
+                    </div><!-- /.box-footer -->
+                </form>
+            </div><!-- /.box -->
+            }
+        </div><!-- /.col -->
+    </div><!-- /.row -->
+</section>
+@section style {
+    <style type="text/css">
+        .form-group .input-group-addon:last-child {
+            width:60px; 
+            padding:0;
+            background:#f1f1f1;
+            font-size:8px;
+        }
+        .form-group .col-sm-4 {
+            margin-bottom: 15px;
+        }
+    </style>
+}
